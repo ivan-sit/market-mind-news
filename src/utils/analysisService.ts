@@ -27,25 +27,25 @@ export const getMarketAnalysis = async () => {
         symbol: "NVDA",
         change: -8.54,
         reason: "Facing pressure from potential new export restrictions to China",
-        type: "drop"
+        type: "drop" as const
       },
       {
         symbol: "META",
         change: 5.27,
         reason: "Rallying after positive earnings report and increased user engagement metrics",
-        type: "surge"
+        type: "surge" as const
       },
       {
         symbol: "TSLA",
         change: -3.62,
         reason: "Declining amid broader market concerns and production challenges",
-        type: "drop"
+        type: "drop" as const
       },
       {
         symbol: "XOM",
         change: 2.85,
         reason: "Gaining as oil prices rise due to heightened Middle East tensions",
-        type: "surge"
+        type: "surge" as const
       }
     ],
     factors: [
