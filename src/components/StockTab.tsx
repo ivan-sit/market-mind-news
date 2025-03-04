@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { StockChart } from './StockChart';
 import { fetchStockData, fetchPopularStocks } from '../utils/stockService';
@@ -6,7 +5,7 @@ import { getStockRecommendation, StockRecommendation } from '../utils/analysisSe
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Search, RefreshCw, TrendingUp, TrendingDown, MinusCircle } from 'lucide-react';
+import { Search, RefreshCw, TrendingUp, TrendingDown, MinusCircle, Brain } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface StockData {
@@ -241,4 +240,3 @@ export const StockTab = () => {
     </div>
   );
 };
-
