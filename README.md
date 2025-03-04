@@ -1,69 +1,89 @@
-# Welcome to your Lovable project
 
-## Project info
+# Market Analyst Dashboard
 
-**URL**: https://lovable.dev/projects/2a3ef478-0d48-4496-a622-e632b79faf6c
+A real-time market analysis dashboard built with React and TypeScript, providing stock visualization, AI-powered market insights, and financial news monitoring.
 
-## How can I edit this code?
+## Features
 
-There are several ways of editing your application.
+### Stock Chart Tab
+- Track and visualize stock price movements
+- Search for any stock by ticker symbol
+- View popular stocks with a single click
+- Get AI-generated buy/sell recommendations for any stock
 
-**Use Lovable**
+### Market Analysis Tab
+- Review overall market sentiment (bullish, bearish, or neutral)
+- See confidence ratings for market predictions
+- Track noteworthy stock movements with explanations
+- Monitor key market factors affecting trading conditions
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/2a3ef478-0d48-4496-a622-e632b79faf6c) and start prompting.
+### News Tab
+- Browse the latest financial news articles
+- Filter news by category (Economy, Technology, Energy, etc.)
+- See sentiment analysis for each news item (positive, negative, neutral)
 
-Changes made via Lovable will be committed automatically to this repo.
+## How It Works
 
-**Use your preferred IDE**
+This application uses simulated APIs to demonstrate functionality without requiring real API keys:
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- **Stock Data**: Mock API in `stockService.ts` generates realistic stock data with randomized historical prices
+- **Market Analysis**: Simulated AI recommendations in `analysisService.ts` provide market insights and stock recommendations
+- **Financial News**: Mock news feed in `newsService.ts` displays recent market news with categorization
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+In a production environment, these services could be connected to real financial data providers like:
+- Alpha Vantage or Yahoo Finance for stock data
+- OpenAI or other AI services for market analysis
+- Bloomberg, Reuters, or financial news APIs for real-time news
 
-Follow these steps:
+## Technologies Used
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+- **React**: Frontend UI library
+- **TypeScript**: Type-safe JavaScript
+- **Vite**: Fast build tool and dev server
+- **shadcn/ui**: Component library for consistent UI
+- **Tailwind CSS**: Utility-first CSS framework
+- **Recharts**: Data visualization library for stock charts
+- **Lucide**: Icon library for clean UI elements
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## Getting Started
 
-# Step 3: Install the necessary dependencies.
-npm i
+1. Clone the repository
+   ```
+   git clone <REPOSITORY_URL>
+   ```
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+2. Navigate to the project directory
+   ```
+   cd market-analyst-dashboard
+   ```
+
+3. Install dependencies
+   ```
+   npm install
+   ```
+
+4. Start the development server
+   ```
+   npm run dev
+   ```
+
+5. Open your browser to the URL shown in the terminal (typically http://localhost:5173)
+
+## Deployment
+
+This project can be deployed to any static hosting service such as Netlify, Vercel, or GitHub Pages.
+
+To build the project for production:
+```
+npm run build
 ```
 
-**Edit a file directly in GitHub**
+The built files will be in the `dist` directory, ready to be deployed.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Future Enhancements
 
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with .
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/2a3ef478-0d48-4496-a622-e632b79faf6c) and click on Share -> Publish.
-
-## I want to use a custom domain - is that possible?
-
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+- Connect to real financial data APIs
+- Add user authentication for personalized watchlists
+- Implement portfolio tracking functionality
+- Add real-time data updates via WebSockets
+- Expand news sources and filtering options
