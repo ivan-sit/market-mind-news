@@ -3,7 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { NewsTab } from './NewsTab';
 import { StockTab } from './StockTab';
-import { Newspaper, TrendingUp } from "lucide-react";
+import { MarketAnalysisTab } from './MarketAnalysisTab';
+import { Newspaper, TrendingUp, Brain } from "lucide-react";
 
 export const Layout = () => {
   const [mounted, setMounted] = useState(false);
@@ -57,6 +58,14 @@ export const Layout = () => {
                 <TrendingUp className="w-4 h-4" />
                 <span>Stock Charts</span>
               </TabsTrigger>
+              <TabsTrigger 
+                value="analysis" 
+                className="flex items-center gap-2 px-6 py-3 text-sm"
+                onClick={() => setActiveTab("analysis")}
+              >
+                <Brain className="w-4 h-4" />
+                <span>AI Analysis</span>
+              </TabsTrigger>
             </TabsList>
           </div>
           
@@ -66,6 +75,9 @@ export const Layout = () => {
             </TabsContent>
             <TabsContent value="stocks" className="animate-slide-up mt-0">
               <StockTab />
+            </TabsContent>
+            <TabsContent value="analysis" className="animate-slide-up mt-0">
+              <MarketAnalysisTab />
             </TabsContent>
           </div>
         </Tabs>
