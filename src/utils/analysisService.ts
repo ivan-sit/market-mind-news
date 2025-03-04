@@ -8,10 +8,19 @@ export const getMarketAnalysis = async () => {
   // Get current date for the analysis
   const now = new Date();
   
+  // Ensure trend is one of the allowed values: 'bearish', 'bullish', or 'neutral'
+  const trendOptions: ['bearish', 'bullish', 'neutral'] = ['bearish', 'bullish', 'neutral'];
+  const randomTrend = (): 'bearish' | 'bullish' | 'neutral' => {
+    const random = Math.random();
+    if (random > 0.6) return 'bearish';
+    if (random > 0.3) return 'bullish';
+    return 'neutral';
+  };
+  
   // Generate mock data
   return {
     summary: "Based on recent market data and news, there's downward pressure on major indices due to concerns about potential new tariffs and ongoing geopolitical tensions. Tech stocks appear particularly vulnerable this week, while defensive sectors like utilities and consumer staples may outperform. Investors should prepare for increased volatility in the coming days as markets digest new economic data releases.",
-    trend: Math.random() > 0.6 ? 'bearish' : Math.random() > 0.5 ? 'bullish' : 'neutral',
+    trend: randomTrend(),
     confidence: Math.floor(Math.random() * 40) + 45, // 45-85% confidence
     noteworthy: [
       {
