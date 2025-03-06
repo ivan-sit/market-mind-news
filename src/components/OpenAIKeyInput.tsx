@@ -3,8 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Key } from 'lucide-react';
+import { Key, Info } from 'lucide-react';
 import { setOpenAIApiKey, getOpenAIApiKey } from '../utils/analysisService';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export const OpenAIKeyInput = () => {
   const [apiKey, setApiKey] = useState('');
@@ -40,11 +41,21 @@ export const OpenAIKeyInput = () => {
           <div className="flex items-center space-x-2 mb-2">
             <Key className="h-5 w-5 text-primary" />
             <h3 className="text-lg font-medium">OpenAI API Key</h3>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="max-w-xs">Using model: gpt-4o-mini for market analysis. API keys are stored locally and never sent to our servers.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
           
           <div className="text-sm text-muted-foreground mb-2">
             {isKeySet 
-              ? "Your API key is set. The app will now generate real AI analysis." 
+              ? "Your API key is set. The app will now generate real AI analysis using gpt-4o-mini." 
               : "Enter your OpenAI API key to enable real AI market analysis."}
           </div>
           
