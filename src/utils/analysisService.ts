@@ -1,62 +1,113 @@
 
-// In a real app, this would call an AI model API or a market data provider
+// This service connects to OpenAI's API to generate real AI market analysis
+
+import { toast } from "sonner";
+
+// OpenAI API types
+interface OpenAIResponse {
+  choices: {
+    message: {
+      content: string;
+    };
+    index: number;
+    finish_reason: string;
+  }[];
+}
+
+// Store the API key in state for demo purposes (in a real app, this would be server-side)
+let openaiApiKey = '';
+
+export const setOpenAIApiKey = (key: string) => {
+  openaiApiKey = key;
+  // Save to localStorage for persistence
+  localStorage.setItem('openai_api_key', key);
+  toast.success("API key saved successfully");
+};
+
+export const getOpenAIApiKey = (): string => {
+  if (!openaiApiKey) {
+    // Try to load from localStorage
+    const savedKey = localStorage.getItem('openai_api_key');
+    if (savedKey) {
+      openaiApiKey = savedKey;
+    }
+  }
+  return openaiApiKey;
+};
 
 export const getMarketAnalysis = async () => {
-  // Simulating API delay
-  await new Promise(resolve => setTimeout(resolve, 2000));
+  const apiKey = getOpenAIApiKey();
   
-  // Get current date for the analysis
-  const now = new Date();
-  
-  // Ensure trend is one of the allowed values: 'bearish', 'bullish', or 'neutral'
-  const trendOptions: ['bearish', 'bullish', 'neutral'] = ['bearish', 'bullish', 'neutral'];
-  const randomTrend = (): 'bearish' | 'bullish' | 'neutral' => {
-    const random = Math.random();
-    if (random > 0.6) return 'bearish';
-    if (random > 0.3) return 'bullish';
-    return 'neutral';
-  };
-  
-  // Generate mock data
-  return {
-    summary: "Based on recent market data and news, there's downward pressure on major indices due to concerns about potential new tariffs and ongoing geopolitical tensions. Tech stocks appear particularly vulnerable this week, while defensive sectors like utilities and consumer staples may outperform. Investors should prepare for increased volatility in the coming days as markets digest new economic data releases.",
-    trend: randomTrend(),
-    confidence: Math.floor(Math.random() * 40) + 45, // 45-85% confidence
-    noteworthy: [
-      {
-        symbol: "NVDA",
-        change: -8.54,
-        reason: "Facing pressure from potential new export restrictions to China",
-        type: "drop" as const
+  if (!apiKey) {
+    throw new Error("OpenAI API key not set. Please set your API key first.");
+  }
+
+  try {
+    // Call OpenAI API
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
       },
-      {
-        symbol: "META",
-        change: 5.27,
-        reason: "Rallying after positive earnings report and increased user engagement metrics",
-        type: "surge" as const
-      },
-      {
-        symbol: "TSLA",
-        change: -3.62,
-        reason: "Declining amid broader market concerns and production challenges",
-        type: "drop" as const
-      },
-      {
-        symbol: "XOM",
-        change: 2.85,
-        reason: "Gaining as oil prices rise due to heightened Middle East tensions",
-        type: "surge" as const
-      }
-    ],
-    factors: [
-      "Potential new tariffs on Chinese imports creating uncertainty",
-      "Federal Reserve signals maintaining current interest rates",
-      "Mixed corporate earnings with 65% of S&P 500 companies beating expectations",
-      "Rising treasury yields putting pressure on growth stocks",
-      "Increasing geopolitical tensions affecting global trade outlook"
-    ],
-    updatedAt: now.toISOString()
-  };
+      body: JSON.stringify({
+        model: 'gpt-4',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert financial analyst. Provide a detailed market analysis in JSON format. The response should include these fields only: summary (string), trend (string, must be either "bearish", "bullish", or "neutral"), confidence (number between 45-85), noteworthy (array of stock movements with fields: symbol, change (number), reason (string), type ("surge" or "drop")), factors (array of strings describing market factors), and updatedAt (current date ISO string).'
+          },
+          {
+            role: 'user',
+            content: 'Generate a comprehensive market analysis for today. Include the required fields in your JSON response.'
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 1000
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`OpenAI API error: ${errorData.error?.message || response.statusText}`);
+    }
+
+    const data = await response.json() as OpenAIResponse;
+    
+    // Parse the AI's response (assuming it returns valid JSON)
+    try {
+      const jsonResponse = JSON.parse(data.choices[0].message.content.trim());
+      
+      // Ensure we have all required fields and proper formatting
+      return {
+        summary: jsonResponse.summary || "No summary provided",
+        trend: ['bearish', 'bullish', 'neutral'].includes(jsonResponse.trend) 
+          ? jsonResponse.trend 
+          : 'neutral',
+        confidence: typeof jsonResponse.confidence === 'number' 
+          ? Math.min(Math.max(jsonResponse.confidence, 45), 85) 
+          : 70,
+        noteworthy: Array.isArray(jsonResponse.noteworthy) 
+          ? jsonResponse.noteworthy.map((stock: any) => ({
+              symbol: stock.symbol || 'UNKNOWN',
+              change: typeof stock.change === 'number' ? stock.change : 0,
+              reason: stock.reason || 'No reason provided',
+              type: stock.type === 'surge' || stock.type === 'drop' ? stock.type : 'surge'
+            }))
+          : [],
+        factors: Array.isArray(jsonResponse.factors) 
+          ? jsonResponse.factors 
+          : ["No market factors provided"],
+        updatedAt: jsonResponse.updatedAt || new Date().toISOString()
+      };
+    } catch (parseError) {
+      console.error("Failed to parse OpenAI's response as JSON:", parseError);
+      throw new Error("Failed to parse AI's response. Please try again.");
+    }
+  } catch (error) {
+    console.error("Error in getMarketAnalysis:", error);
+    throw error;
+  }
 };
 
 export type StockRecommendation = {
@@ -67,114 +118,72 @@ export type StockRecommendation = {
 };
 
 export const getStockRecommendation = async (symbol: string): Promise<StockRecommendation> => {
-  // Simulating API delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
+  const apiKey = getOpenAIApiKey();
   
-  // In a real application, this would call an AI model API
-  // For now, we'll generate pseudo-random recommendations
-  const random = Math.random();
-  
-  // Predefined reasons for specific stocks (for a more realistic mock)
-  const stockReasons: Record<string, { buy: string[], sell: string[], hold: string[] }> = {
-    'AAPL': {
-      buy: [
-        "Strong product ecosystem with high customer loyalty",
-        "Continued growth in services revenue and wearables",
-        "Stable cash flow and aggressive share buyback program"
-      ],
-      sell: [
-        "Slowing iPhone growth and market saturation",
-        "Increasing competition in key markets",
-        "Potential regulatory challenges in app store business"
-      ],
-      hold: [
-        "Steady performance but limited short-term catalysts",
-        "Balanced risk-reward ratio at current valuation",
-        "Wait for next product cycle before reassessing position"
-      ]
-    },
-    'MSFT': {
-      buy: [
-        "Cloud business (Azure) showing strong growth momentum",
-        "Successful AI integration across product suite",
-        "Dominant position in enterprise software market"
-      ],
-      sell: [
-        "Potential slowdown in cloud growth rate",
-        "High valuation relative to historical averages",
-        "Facing increased competition in AI and cloud services"
-      ],
-      hold: [
-        "Solid fundamentals but priced for perfection",
-        "Monitor upcoming earnings for growth trajectory",
-        "Consider dollar-cost averaging to build position"
-      ]
-    },
-    'GOOGL': {
-      buy: [
-        "Digital advertising recovery showing positive signs",
-        "Strong position in AI with practical applications",
-        "YouTube and Cloud segments driving growth"
-      ],
-      sell: [
-        "Regulatory concerns and potential antitrust actions",
-        "Increased competition in core advertising business",
-        "Rising costs for AI development pressuring margins"
-      ],
-      hold: [
-        "Await more clarity on regulatory environment",
-        "Monitor AI monetization progress",
-        "Consider rotation within tech sector"
-      ]
+  if (!apiKey) {
+    throw new Error("OpenAI API key not set. Please set your API key first.");
+  }
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4',
+        messages: [
+          {
+            role: 'system',
+            content: `You are an expert stock analyst. Provide investment advice for a specific stock in JSON format. The response should include these fields only: recommendation (string, must be either "buy", "sell", or "hold"), confidence (number between 55-85), reasoning (string explaining the recommendation), and timeHorizon (string, must be either "short-term", "medium-term", or "long-term").`
+          },
+          {
+            role: 'user',
+            content: `Analyze the stock ${symbol} and provide a recommendation. Include the required fields in your JSON response.`
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 500
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`OpenAI API error: ${errorData.error?.message || response.statusText}`);
     }
-  };
-  
-  // Default reasons for stocks not in our predefined list
-  const defaultReasons = {
-    buy: [
-      "Technical indicators suggest upward momentum",
-      "Recent financial results exceeded analyst expectations",
-      "Industry trends support continued growth",
-      "Valuation appears attractive relative to peers"
-    ],
-    sell: [
-      "Technical analysis indicates a bearish trend",
-      "Recent earnings disappointment suggests fundamental weaknesses",
-      "Industry headwinds likely to impact performance",
-      "Valuation appears stretched relative to growth prospects"
-    ],
-    hold: [
-      "Mixed signals in recent performance metrics",
-      "Current price reflects fair value based on available information",
-      "Monitor upcoming catalysts before adjusting position",
-      "Risk-reward profile currently balanced"
-    ]
-  };
-  
-  // Select recommendation type based on random value
-  let recommendation: 'buy' | 'sell' | 'hold';
-  if (random > 0.6) recommendation = 'buy';
-  else if (random > 0.3) recommendation = 'sell';
-  else recommendation = 'hold';
-  
-  // Get relevant reasons
-  const reasons = stockReasons[symbol] || defaultReasons;
-  const reasonsList = reasons[recommendation];
-  const reasoning = reasonsList[Math.floor(Math.random() * reasonsList.length)];
-  
-  // Generate random confidence level (higher for known stocks)
-  const confidence = stockReasons[symbol] 
-    ? Math.floor(Math.random() * 20) + 65 // 65-85% for known stocks
-    : Math.floor(Math.random() * 30) + 55; // 55-85% for unknown stocks
-  
-  // Randomly select time horizon
-  const timeHorizons: ['short-term', 'medium-term', 'long-term'] = ['short-term', 'medium-term', 'long-term'];
-  const timeHorizon = timeHorizons[Math.floor(Math.random() * timeHorizons.length)];
-  
-  return {
-    recommendation,
-    confidence,
-    reasoning,
-    timeHorizon
-  };
+
+    const data = await response.json() as OpenAIResponse;
+    
+    // Parse the AI's response
+    try {
+      const jsonResponse = JSON.parse(data.choices[0].message.content.trim());
+      
+      // Validate and return the response
+      const recommendation = ['buy', 'sell', 'hold'].includes(jsonResponse.recommendation) 
+        ? jsonResponse.recommendation 
+        : 'hold';
+        
+      const confidence = typeof jsonResponse.confidence === 'number' 
+        ? Math.min(Math.max(jsonResponse.confidence, 55), 85) 
+        : 70;
+        
+      const timeHorizon = ['short-term', 'medium-term', 'long-term'].includes(jsonResponse.timeHorizon) 
+        ? jsonResponse.timeHorizon 
+        : 'medium-term';
+        
+      return {
+        recommendation,
+        confidence,
+        reasoning: jsonResponse.reasoning || "No reasoning provided",
+        timeHorizon
+      };
+    } catch (parseError) {
+      console.error("Failed to parse OpenAI's response as JSON:", parseError);
+      throw new Error("Failed to parse AI's response. Please try again.");
+    }
+  } catch (error) {
+    console.error("Error in getStockRecommendation:", error);
+    throw error;
+  }
 };

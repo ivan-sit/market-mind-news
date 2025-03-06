@@ -4,6 +4,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, TrendingDown, TrendingUp, AlertTriangle } from 'lucide-react';
 import { getMarketAnalysis } from '../utils/analysisService';
+import { OpenAIKeyInput } from './OpenAIKeyInput';
+import { toast } from 'sonner';
 
 interface MarketInsight {
   summary: string;
@@ -30,9 +32,11 @@ export const MarketAnalysisTab = () => {
     try {
       const data = await getMarketAnalysis();
       setAnalysis(data);
-    } catch (err) {
+      toast.success("Analysis updated successfully");
+    } catch (err: any) {
       console.error('Failed to fetch market analysis:', err);
-      setError('Failed to load market analysis. Please try again later.');
+      setError(err.message || 'Failed to load market analysis. Please try again later.');
+      toast.error(err.message || 'Failed to load market analysis');
     } finally {
       setIsLoading(false);
     }
@@ -70,6 +74,8 @@ export const MarketAnalysisTab = () => {
 
   return (
     <div className="animate-fade-in">
+      <OpenAIKeyInput />
+      
       <div className="flex justify-end mb-4">
         <Button
           variant="ghost"
@@ -176,4 +182,3 @@ export const MarketAnalysisTab = () => {
     </div>
   );
 };
-
