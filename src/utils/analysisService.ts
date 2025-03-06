@@ -1,7 +1,9 @@
+
 // This service connects to OpenAI's API to generate real AI market analysis
 
 import { toast } from "sonner";
 import { getOpenAIApiKey } from "../config/apiKeys";
+import { fetchStockNews } from "./stockService";
 
 // OpenAI API types
 interface OpenAIResponse {
@@ -104,6 +106,12 @@ export const getStockRecommendation = async (symbol: string): Promise<StockRecom
   }
 
   try {
+    // Fetch news related to this stock for better analysis
+    const stockNews = await fetchStockNews(symbol);
+    const newsContext = stockNews.length > 0 
+      ? `Recent news about ${symbol}: ${stockNews.slice(0, 5).map((item: any) => `"${item.title}"`).join('. ')}`
+      : `Analyze the stock ${symbol} with the information you have.`;
+    
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -115,15 +123,15 @@ export const getStockRecommendation = async (symbol: string): Promise<StockRecom
         messages: [
           {
             role: 'system',
-            content: `You are an expert stock analyst. Provide investment advice for a specific stock in JSON format. The response should include these fields only: recommendation (string, must be either "buy", "sell", or "hold"), confidence (number between 55-85), reasoning (string explaining the recommendation), and timeHorizon (string, must be either "short-term", "medium-term", or "long-term").`
+            content: `You are an expert stock analyst. Provide investment advice for a specific stock in JSON format. The response should include these fields only: recommendation (string, must be either "buy", "sell", or "hold"), confidence (number between 55-85), reasoning (string explaining the recommendation in detail with market analysis and supporting facts), and timeHorizon (string, must be either "short-term", "medium-term", or "long-term").`
           },
           {
             role: 'user',
-            content: `Analyze the stock ${symbol} and provide a recommendation. Include the required fields in your JSON response.`
+            content: newsContext
           }
         ],
         temperature: 0.7,
-        max_tokens: 500
+        max_tokens: 800
       })
     });
 
@@ -136,7 +144,16 @@ export const getStockRecommendation = async (symbol: string): Promise<StockRecom
     
     // Parse the AI's response
     try {
-      const jsonResponse = JSON.parse(data.choices[0].message.content.trim());
+      // Try to extract JSON from the response
+      const content = data.choices[0].message.content.trim();
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      let jsonResponse;
+      
+      if (jsonMatch) {
+        jsonResponse = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error("No valid JSON found in the response");
+      }
       
       // Validate and return the response
       const recommendation = ['buy', 'sell', 'hold'].includes(jsonResponse.recommendation) 
@@ -159,6 +176,7 @@ export const getStockRecommendation = async (symbol: string): Promise<StockRecom
       };
     } catch (parseError) {
       console.error("Failed to parse OpenAI's response as JSON:", parseError);
+      console.log("Raw response:", data.choices[0].message.content);
       throw new Error("Failed to parse AI's response. Please try again.");
     }
   } catch (error) {

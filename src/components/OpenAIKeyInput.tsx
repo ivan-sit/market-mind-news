@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -48,7 +49,7 @@ export const OpenAIKeyInput = () => {
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" />
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p className="max-w-xs">Using model: gpt-4o-mini for market analysis. API keys are stored locally and never sent to our servers.</p>
+                  <p className="max-w-xs">Used for ranking news articles and generating stock recommendations using gpt-4o-mini. API keys are stored locally and never sent to our servers.</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -56,8 +57,8 @@ export const OpenAIKeyInput = () => {
           
           <div className="text-sm text-muted-foreground mb-2">
             {isKeySet 
-              ? "Your API key is set. The app will now generate real AI analysis using gpt-4o-mini." 
-              : "Enter your OpenAI API key to enable real AI market analysis."}
+              ? "Your API key is set. The app will now rank news by importance and provide real AI stock analysis." 
+              : "Enter your OpenAI API key to enable AI-powered market analysis and news ranking."}
           </div>
           
           <div className="flex gap-2">

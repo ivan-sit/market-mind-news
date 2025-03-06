@@ -90,6 +90,23 @@ export const fetchStockData = async (symbol: string) => {
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
       .slice(-31); // Last 31 days
     
+    // Try to get company overview for the name
+    let companyName = symbol;
+    try {
+      const overviewResponse = await fetch(
+        `${BASE_URL}?function=OVERVIEW&symbol=${symbol}&apikey=${apiKey}`
+      );
+      if (overviewResponse.ok) {
+        const overviewData = await overviewResponse.json();
+        if (overviewData.Name) {
+          companyName = overviewData.Name;
+        }
+      }
+    } catch (error) {
+      console.error(`Error fetching company overview for ${symbol}:`, error);
+      // Use symbol as fallback
+    }
+    
     // Calculate price change
     const price = parseFloat(quote['05. price']);
     const prevClose = parseFloat(quote['08. previous close']);
@@ -99,7 +116,7 @@ export const fetchStockData = async (symbol: string) => {
     // Combine the data
     return {
       symbol,
-      companyName: `${symbol}`, // Alpha Vantage doesn't provide company name in GLOBAL_QUOTE
+      companyName,
       price,
       change,
       changePercent,
@@ -109,6 +126,36 @@ export const fetchStockData = async (symbol: string) => {
     console.error(`Error fetching data for ${symbol}:`, error);
     // Fallback to mock data on error
     return generateMockStockData(symbol);
+  }
+};
+
+// Fetch stock-specific news
+export const fetchStockNews = async (symbol: string): Promise<any[]> => {
+  const apiKey = getAlphaVantageApiKey();
+  
+  if (!apiKey) {
+    return [];
+  }
+  
+  try {
+    const response = await fetch(
+      `${BASE_URL}?function=NEWS_SENTIMENT&tickers=${symbol}&apikey=${apiKey}&limit=10`
+    );
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch news for ${symbol}`);
+    }
+    
+    const data = await response.json();
+    
+    if (!data.feed || !Array.isArray(data.feed)) {
+      return [];
+    }
+    
+    return data.feed;
+  } catch (error) {
+    console.error(`Error fetching news for ${symbol}:`, error);
+    return [];
   }
 };
 

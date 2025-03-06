@@ -1,4 +1,8 @@
-// Real news API service that fetches from multiple sources
+
+// Enhanced news API service that fetches from Alpha Vantage and uses OpenAI for ranking
+
+import { getAlphaVantageApiKey, getOpenAIApiKey } from '../config/apiKeys';
+import { toast } from 'sonner';
 
 export interface NewsItem {
   id: string;
@@ -9,132 +13,162 @@ export interface NewsItem {
   publishedAt: string;
   sentiment: 'positive' | 'negative' | 'neutral';
   category: string;
+  importance?: number; // Added for OpenAI ranking
 }
 
-// Fetches news from Marketaux API (financial news)
+// Fetches news from Alpha Vantage API and ranks them with OpenAI
 export const fetchNews = async (): Promise<NewsItem[]> => {
+  const alphaVantageKey = getAlphaVantageApiKey();
+  
+  if (!alphaVantageKey) {
+    console.warn('Alpha Vantage API key not set, using mock data');
+    return getMockNews();
+  }
+  
   try {
-    // First try with Marketaux API (free tier)
+    // Fetch news from Alpha Vantage
     const response = await fetch(
-      'https://api.marketaux.com/v1/news/all?symbols=TSLA,AMZN,MSFT,AAPL,GOOGL&filter_entities=true&language=en&api_token=R2p0n4CRhP71TPLCuShtB5tpL9NfAJ3s2kxKXirg'
+      `https://www.alphavantage.co/query?function=NEWS_SENTIMENT&apikey=${alphaVantageKey}&limit=50`
     );
     
     if (!response.ok) {
-      throw new Error('Failed to fetch news data');
+      throw new Error('Failed to fetch news data from Alpha Vantage');
     }
     
     const data = await response.json();
     
-    if (!data.data || !Array.isArray(data.data)) {
-      throw new Error('Invalid news data format');
+    if (!data.feed || !Array.isArray(data.feed)) {
+      throw new Error('Invalid news data format from Alpha Vantage');
     }
     
     // Map the API response to our NewsItem interface
-    const newsItems: NewsItem[] = data.data.map((item: any, index: number) => {
+    let newsItems: NewsItem[] = data.feed.map((item: any, index: number) => {
       // Determine sentiment based on sentiment score if available
       let sentiment: 'positive' | 'negative' | 'neutral' = 'neutral';
-      if (item.sentiment_score) {
-        sentiment = item.sentiment_score > 0.2 
+      if (item.overall_sentiment_score) {
+        sentiment = parseFloat(item.overall_sentiment_score) > 0.2 
           ? 'positive' 
-          : item.sentiment_score < -0.2 
+          : parseFloat(item.overall_sentiment_score) < -0.2 
             ? 'negative' 
             : 'neutral';
       }
       
-      // Determine category based on entity types or keywords
+      // Determine category based on topics
       let category = 'Markets';
-      if (item.entities && item.entities.length > 0) {
-        const entityTypes = item.entities.map((e: any) => e.type);
-        if (entityTypes.includes('technology')) category = 'Technology';
-        else if (entityTypes.includes('energy')) category = 'Energy';
-        else if (entityTypes.includes('healthcare')) category = 'Healthcare';
-        else if (entityTypes.includes('finance')) category = 'Economy';
+      if (item.topics && item.topics.length > 0) {
+        const topics = item.topics.map((t: any) => t.topic);
+        if (topics.includes('technology')) category = 'Technology';
+        else if (topics.includes('energy')) category = 'Energy';
+        else if (topics.some((t: string) => t.includes('health'))) category = 'Healthcare';
+        else if (topics.some((t: string) => t.includes('econom'))) category = 'Economy';
+        else if (topics.some((t: string) => t.includes('retail'))) category = 'Retail';
       }
       
       return {
-        id: item.uuid || `news-${index}`,
+        id: `news-${index}-${Date.now()}`,
         title: item.title,
-        description: item.description || item.snippet || "No description available",
+        description: item.summary || "No description available",
         source: item.source || "Financial News",
         url: item.url,
-        publishedAt: item.published_at,
+        publishedAt: item.time_published || new Date().toISOString(),
         sentiment,
         category
       };
     });
     
-    return newsItems;
-  } catch (error) {
-    console.error('Error fetching news from Marketaux:', error);
-    
-    // Fallback to Finnhub API
-    try {
-      const response = await fetch(
-        'https://finnhub.io/api/v1/news?category=general&token=cjk3e1pr01qj3c1vodhgcjk3e1pr01qj3c1vodi0'
-      );
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch news from fallback source');
+    // If OpenAI API key is set, use it to rank the news
+    const openAIKey = getOpenAIApiKey();
+    if (openAIKey && newsItems.length > 0) {
+      try {
+        newsItems = await rankNewsWithOpenAI(newsItems, openAIKey);
+      } catch (openAIError) {
+        console.error('Error ranking news with OpenAI:', openAIError);
+        // Continue with unranked news
       }
-      
-      const data = await response.json();
-      
-      if (!Array.isArray(data)) {
-        throw new Error('Invalid news data format from fallback source');
-      }
-      
-      // Map Finnhub data to our format
-      const newsItems: NewsItem[] = data.map((item: any, index: number) => {
-        // Simple sentiment analysis based on title
-        const title = item.headline.toLowerCase();
-        let sentiment: 'positive' | 'negative' | 'neutral' = 'neutral';
-        
-        const positiveWords = ['rise', 'gain', 'up', 'surge', 'jump', 'positive', 'growth', 'boost'];
-        const negativeWords = ['fall', 'drop', 'down', 'decline', 'negative', 'loss', 'cut', 'slash'];
-        
-        if (positiveWords.some(word => title.includes(word))) {
-          sentiment = 'positive';
-        } else if (negativeWords.some(word => title.includes(word))) {
-          sentiment = 'negative';
-        }
-        
-        // Determine category based on keywords
-        let category = 'Markets';
-        const categoryKeywords = {
-          'Technology': ['tech', 'software', 'hardware', 'apple', 'microsoft', 'google', 'amazon'],
-          'Economy': ['economy', 'fed', 'interest rate', 'inflation', 'gdp'],
-          'Energy': ['oil', 'gas', 'energy', 'renewable', 'solar', 'wind'],
-          'Healthcare': ['health', 'pharma', 'drug', 'medical', 'biotech'],
-          'Retail': ['retail', 'consumer', 'shop', 'store', 'brand']
-        };
-        
-        for (const [cat, keywords] of Object.entries(categoryKeywords)) {
-          if (keywords.some(keyword => title.includes(keyword))) {
-            category = cat;
-            break;
-          }
-        }
-        
-        return {
-          id: item.id.toString() || `news-${index}`,
-          title: item.headline,
-          description: item.summary || "No description available",
-          source: item.source,
-          url: item.url,
-          publishedAt: new Date(item.datetime * 1000).toISOString(),
-          sentiment,
-          category
-        };
-      });
-      
-      return newsItems;
-    } catch (fallbackError) {
-      console.error('Error fetching news from fallback source:', fallbackError);
-      // Fall back to mock data if all APIs fail
-      return getMockNews();
     }
+    
+    return newsItems.slice(0, 20); // Return top 20 news items
+  } catch (error) {
+    console.error('Error fetching news from Alpha Vantage:', error);
+    return getMockNews();
   }
 };
+
+// Use OpenAI to rank news by importance
+async function rankNewsWithOpenAI(newsItems: NewsItem[], apiKey: string): Promise<NewsItem[]> {
+  try {
+    // Create concise representation of news items for the API call
+    const newsData = newsItems.map(item => ({
+      id: item.id,
+      title: item.title,
+      summary: item.description
+    }));
+    
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a financial news analyst. Analyze the following financial news items and rank them by importance for market investors. Return a JSON array with item IDs and importance scores from 1-100, where 100 is most important.'
+          },
+          {
+            role: 'user',
+            content: JSON.stringify(newsData)
+          }
+        ],
+        temperature: 0.3,
+        max_tokens: 800
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const content = data.choices[0].message.content;
+    
+    // Parse the OpenAI response to get rankings
+    let rankings;
+    try {
+      // Extract the JSON part from the response
+      const jsonMatch = content.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        rankings = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error("No JSON found in response");
+      }
+    } catch (e) {
+      console.error("Error parsing OpenAI response:", e);
+      console.log("Raw response:", content);
+      throw new Error("Failed to parse rankings");
+    }
+    
+    // Map importance scores to original news items
+    const rankedNews = [...newsItems];
+    rankings.forEach((rank: { id: string, importance: number }) => {
+      const index = rankedNews.findIndex(item => item.id === rank.id);
+      if (index !== -1) {
+        rankedNews[index].importance = rank.importance;
+      }
+    });
+    
+    // Sort by importance (highest first)
+    return rankedNews
+      .sort((a, b) => (b.importance || 0) - (a.importance || 0));
+      
+  } catch (error) {
+    console.error('Failed to rank news with OpenAI:', error);
+    toast.error('Failed to rank news with AI. Showing unranked results.');
+    return newsItems;
+  }
+}
 
 // Mock news data generator - used as fallback when APIs fail
 const getMockNews = (): NewsItem[] => {
