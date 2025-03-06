@@ -1,7 +1,7 @@
-
 // This service connects to OpenAI's API to generate real AI market analysis
 
 import { toast } from "sonner";
+import { getOpenAIApiKey } from "../config/apiKeys";
 
 // OpenAI API types
 interface OpenAIResponse {
@@ -13,27 +13,6 @@ interface OpenAIResponse {
     finish_reason: string;
   }[];
 }
-
-// Store the API key in state for demo purposes (in a real app, this would be server-side)
-let openaiApiKey = '';
-
-export const setOpenAIApiKey = (key: string) => {
-  openaiApiKey = key;
-  // Save to localStorage for persistence
-  localStorage.setItem('openai_api_key', key);
-  toast.success("API key saved successfully");
-};
-
-export const getOpenAIApiKey = (): string => {
-  if (!openaiApiKey) {
-    // Try to load from localStorage
-    const savedKey = localStorage.getItem('openai_api_key');
-    if (savedKey) {
-      openaiApiKey = savedKey;
-    }
-  }
-  return openaiApiKey;
-};
 
 export const getMarketAnalysis = async () => {
   const apiKey = getOpenAIApiKey();

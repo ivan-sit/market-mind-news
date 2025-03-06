@@ -1,18 +1,119 @@
 
-// In a real app, these would be actual API calls to stock data providers
+import { getAlphaVantageApiKey } from '../config/apiKeys';
+
+// Alpha Vantage API endpoints
+const BASE_URL = 'https://www.alphavantage.co/query';
 
 export const fetchPopularStocks = async (): Promise<string[]> => {
-  // Simulating API delay
-  await new Promise(resolve => setTimeout(resolve, 800));
+  const apiKey = getAlphaVantageApiKey();
   
-  // Return a list of popular stock symbols
-  return ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA'];
+  if (!apiKey) {
+    // Return default popular stocks if no API key is provided
+    return ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA'];
+  }
+  
+  try {
+    // Fetch the list of top gainers/losers from Alpha Vantage
+    const response = await fetch(`${BASE_URL}?function=TOP_GAINERS_LOSERS&apikey=${apiKey}`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch popular stocks');
+    }
+    
+    const data = await response.json();
+    
+    if (!data.top_gainers || !Array.isArray(data.top_gainers)) {
+      throw new Error('Invalid response format');
+    }
+    
+    // Extract symbols from top gainers (limit to 5)
+    const symbols = data.top_gainers
+      .slice(0, 5)
+      .map((stock: any) => stock.ticker);
+    
+    return symbols;
+  } catch (error) {
+    console.error('Error fetching popular stocks:', error);
+    // Return default popular stocks on error
+    return ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA'];
+  }
 };
 
 export const fetchStockData = async (symbol: string) => {
-  // Simulating API delay
-  await new Promise(resolve => setTimeout(resolve, 1500));
+  const apiKey = getAlphaVantageApiKey();
   
+  if (!apiKey) {
+    // If no API key, use mock data
+    return generateMockStockData(symbol);
+  }
+  
+  try {
+    // Fetch the current quote for the stock
+    const quoteResponse = await fetch(`${BASE_URL}?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${apiKey}`);
+    
+    if (!quoteResponse.ok) {
+      throw new Error(`Failed to fetch quote for ${symbol}`);
+    }
+    
+    const quoteData = await quoteResponse.json();
+    
+    // Check if we have a valid quote
+    if (!quoteData['Global Quote'] || Object.keys(quoteData['Global Quote']).length === 0) {
+      throw new Error(`No quote data found for ${symbol}`);
+    }
+    
+    const quote = quoteData['Global Quote'];
+    
+    // Fetch the historical data (daily)
+    const historyResponse = await fetch(
+      `${BASE_URL}?function=TIME_SERIES_DAILY&symbol=${symbol}&outputsize=compact&apikey=${apiKey}`
+    );
+    
+    if (!historyResponse.ok) {
+      throw new Error(`Failed to fetch history for ${symbol}`);
+    }
+    
+    const historyData = await historyResponse.json();
+    
+    // Check if we have valid historical data
+    if (!historyData['Time Series (Daily)']) {
+      throw new Error(`No historical data found for ${symbol}`);
+    }
+    
+    // Process historical data
+    const timeSeriesData = historyData['Time Series (Daily)'];
+    const historicalData = Object.entries(timeSeriesData)
+      .map(([date, values]: [string, any]) => ({
+        date,
+        close: parseFloat(values['4. close'])
+      }))
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .slice(-31); // Last 31 days
+    
+    // Calculate price change
+    const price = parseFloat(quote['05. price']);
+    const prevClose = parseFloat(quote['08. previous close']);
+    const change = price - prevClose;
+    const changePercent = (change / prevClose) * 100;
+    
+    // Combine the data
+    return {
+      symbol,
+      companyName: `${symbol}`, // Alpha Vantage doesn't provide company name in GLOBAL_QUOTE
+      price,
+      change,
+      changePercent,
+      historicalData
+    };
+  } catch (error) {
+    console.error(`Error fetching data for ${symbol}:`, error);
+    // Fallback to mock data on error
+    return generateMockStockData(symbol);
+  }
+};
+
+// Function to generate mock stock data (used as fallback when API key is not provided or on error)
+const generateMockStockData = (symbol: string) => {
   // Generate mock historical data (last 30 days)
   const generateHistoricalData = (basePrice: number) => {
     const data = [];
@@ -94,7 +195,7 @@ export const fetchStockData = async (symbol: string) => {
     
     return {
       symbol,
-      companyName: `${symbol} Corporation`,
+      companyName: `${symbol}`,
       price: basePrice,
       change,
       changePercent,

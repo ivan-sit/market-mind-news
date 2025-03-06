@@ -1,18 +1,20 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Key, Info } from 'lucide-react';
-import { setOpenAIApiKey, getOpenAIApiKey } from '../config/apiKeys';
+import { LineChart, Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { getAlphaVantageApiKey, setAlphaVantageApiKey } from '../config/apiKeys';
 import { toast } from 'sonner';
 
-export const OpenAIKeyInput = () => {
+export const AlphaVantageKeyInput = () => {
   const [apiKey, setApiKey] = useState('');
   const [isKeySet, setIsKeySet] = useState(false);
 
   useEffect(() => {
-    const savedKey = getOpenAIApiKey();
+    // Check if a key is already saved
+    const savedKey = getAlphaVantageApiKey();
     if (savedKey) {
       setApiKey(savedKey);
       setIsKeySet(true);
@@ -21,18 +23,18 @@ export const OpenAIKeyInput = () => {
 
   const handleSaveKey = () => {
     if (apiKey.trim()) {
-      setOpenAIApiKey(apiKey.trim());
+      setAlphaVantageApiKey(apiKey.trim());
       setIsKeySet(true);
-      toast.success("API key saved successfully");
+      toast.success("Alpha Vantage API key saved");
     }
   };
 
   const handleClearKey = () => {
     setApiKey('');
-    setOpenAIApiKey('');
+    setAlphaVantageApiKey('');
     setIsKeySet(false);
-    localStorage.removeItem('openai_api_key');
-    toast.info("API key cleared");
+    localStorage.removeItem('alpha_vantage_api_key');
+    toast.info("Alpha Vantage API key cleared");
   };
 
   return (
@@ -40,15 +42,15 @@ export const OpenAIKeyInput = () => {
       <CardContent className="p-4">
         <div className="flex flex-col space-y-3">
           <div className="flex items-center space-x-2 mb-2">
-            <Key className="h-5 w-5 text-primary" />
-            <h3 className="text-lg font-medium">OpenAI API Key</h3>
+            <LineChart className="h-5 w-5 text-primary" />
+            <h3 className="text-lg font-medium">Alpha Vantage API Key</h3>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" />
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p className="max-w-xs">Using model: gpt-4o-mini for market analysis. API keys are stored locally and never sent to our servers.</p>
+                  <p className="max-w-xs">Get your free Alpha Vantage API key at alphavantage.co. Keys are stored locally only.</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -56,8 +58,8 @@ export const OpenAIKeyInput = () => {
           
           <div className="text-sm text-muted-foreground mb-2">
             {isKeySet 
-              ? "Your API key is set. The app will now generate real AI analysis using gpt-4o-mini." 
-              : "Enter your OpenAI API key to enable real AI market analysis."}
+              ? "Your API key is set. The app will now fetch real stock data from Alpha Vantage." 
+              : "Enter your Alpha Vantage API key to enable real stock data."}
           </div>
           
           <div className="flex gap-2">
@@ -65,7 +67,7 @@ export const OpenAIKeyInput = () => {
               type="password"
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
-              placeholder="sk-..."
+              placeholder="Your Alpha Vantage API key"
               className="flex-1"
             />
             {isKeySet ? (
@@ -80,7 +82,9 @@ export const OpenAIKeyInput = () => {
           </div>
           
           <div className="text-xs text-muted-foreground mt-2">
-            Your API key is stored in your browser's local storage and is never sent to our servers.
+            <a href="https://www.alphavantage.co/support/#api-key" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+              Get a free Alpha Vantage API key
+            </a>
           </div>
         </div>
       </CardContent>

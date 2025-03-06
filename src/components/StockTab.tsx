@@ -8,6 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Search, RefreshCw, TrendingUp, TrendingDown, MinusCircle, Brain } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { AlphaVantageKeyInput } from './AlphaVantageKeyInput';
+import { OpenAIKeyInput } from './OpenAIKeyInput';
+import { getAlphaVantageApiKey } from '../config/apiKeys';
 
 interface StockData {
   symbol: string;
@@ -111,6 +114,16 @@ export const StockTab = () => {
 
   return (
     <div className="animate-fade-in">
+      {/* API Keys Panel */}
+      <div className="flex flex-col md:flex-row gap-4 mb-8">
+        <div className="flex-1">
+          <AlphaVantageKeyInput />
+        </div>
+        <div className="flex-1">
+          <OpenAIKeyInput />
+        </div>
+      </div>
+
       <div className="glass-panel p-6 mb-8 rounded-lg shadow-lg border-t border-white/20">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 flex gap-2">
@@ -153,6 +166,11 @@ export const StockTab = () => {
       {error && (
         <div className="text-center p-8 rounded-lg glass-panel border border-destructive/20">
           <p className="text-destructive">{error}</p>
+          {!getAlphaVantageApiKey() && (
+            <p className="mt-2 text-sm text-muted-foreground">
+              Please add your Alpha Vantage API key above to get real stock data.
+            </p>
+          )}
         </div>
       )}
 
