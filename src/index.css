@@ -5,7 +5,7 @@
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
+    --background: 220 20% 98%;
     --foreground: 220 20% 10%;
 
     --card: 0 0% 100%;
@@ -14,7 +14,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 220 20% 10%;
 
-    --primary: 220 40% 50%;
+    --primary: 220 60% 50%;
     --primary-foreground: 210 40% 98%;
 
     --secondary: 220 10% 90%;
@@ -31,22 +31,22 @@
 
     --border: 220 20% 90%;
     --input: 220 20% 90%;
-    --ring: 220 40% 50%;
+    --ring: 220 60% 50%;
 
     --radius: 0.75rem;
   }
 
   .dark {
-    --background: 220 20% 10%;
+    --background: 220 30% 10%;
     --foreground: 210 20% 98%;
 
-    --card: 220 20% 12%;
+    --card: 220 30% 12%;
     --card-foreground: 210 20% 98%;
 
-    --popover: 220 20% 12%;
+    --popover: 220 30% 12%;
     --popover-foreground: 210 20% 98%;
 
-    --primary: 220 40% 60%;
+    --primary: 220 60% 60%;
     --primary-foreground: 220 20% 10%;
 
     --secondary: 220 20% 20%;
@@ -63,7 +63,7 @@
 
     --border: 220 20% 20%;
     --input: 220 20% 20%;
-    --ring: 220 40% 60%;
+    --ring: 220 60% 60%;
   }
 }
 
@@ -75,6 +75,9 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    background-image: 
+      radial-gradient(circle at 20% 20%, rgba(76, 103, 255, 0.03) 0%, transparent 70%),
+      radial-gradient(circle at 80% 80%, rgba(76, 103, 255, 0.03) 0%, transparent 70%);
   }
 }
 
@@ -97,6 +100,26 @@
 
 .glass-panel {
   @apply backdrop-blur-md bg-white/60 dark:bg-black/60 border border-white/20 dark:border-black/20;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+}
+
+/* Trading theme specific styles */
+.trading-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.price-up {
+  @apply text-green-500 font-medium;
+}
+
+.price-down {
+  @apply text-red-500 font-medium;
+}
+
+.ticker-tape {
+  @apply overflow-hidden whitespace-nowrap;
 }
 
 /* Page transition animations */
@@ -153,3 +176,4 @@
 .ticker-animation {
   animation: ticker 30s linear infinite;
 }
+

@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, 
-  Tooltip, ResponsiveContainer, ReferenceLine 
+  Tooltip, ResponsiveContainer, ReferenceLine, Area, AreaChart
 } from 'recharts';
 
 interface DataPoint {
@@ -40,7 +40,7 @@ export const StockChart = ({ data }: StockChartProps) => {
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="glass-panel p-3 shadow-md rounded-md border border-border">
+        <div className="glass-panel p-3 shadow-md rounded-md border border-white/20">
           <p className="text-sm font-medium">{formatTooltipDate(label)}</p>
           <p className="text-sm text-primary">
             <span className="font-medium">Price:</span> ${payload[0].value.toFixed(2)}
@@ -60,10 +60,15 @@ export const StockChart = ({ data }: StockChartProps) => {
     data[0].close > data[data.length - 1].close 
     ? "rgba(239, 68, 68, 0.7)" 
     : "rgba(34, 197, 94, 0.7)";
+    
+  const gradientColor = data.length > 1 && 
+    data[0].close > data[data.length - 1].close 
+    ? ["rgba(239, 68, 68, 0.1)", "rgba(239, 68, 68, 0)"] 
+    : ["rgba(34, 197, 94, 0.1)", "rgba(34, 197, 94, 0)"];
 
   return (
     <ResponsiveContainer width="100%" height="100%" className="animate-fade-in">
-      <LineChart
+      <AreaChart
         data={data}
         margin={{
           top: 10,
@@ -72,6 +77,12 @@ export const StockChart = ({ data }: StockChartProps) => {
           bottom: 10,
         }}
       >
+        <defs>
+          <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor={gradientColor[0]} stopOpacity={0.8}/>
+            <stop offset="95%" stopColor={gradientColor[1]} stopOpacity={0}/>
+          </linearGradient>
+        </defs>
         <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.15} />
         <XAxis 
           dataKey="date" 
@@ -92,16 +103,17 @@ export const StockChart = ({ data }: StockChartProps) => {
         />
         <Tooltip content={<CustomTooltip />} />
         <ReferenceLine y={data[0]?.close} stroke="var(--muted-foreground)" strokeDasharray="3 3" />
-        <Line
+        <Area
           type="monotone"
           dataKey="close"
           stroke={priceChangeColor}
           strokeWidth={2}
+          fill="url(#colorGradient)"
           dot={false}
           activeDot={{ r: 6, stroke: "var(--background)", strokeWidth: 2 }}
           animationDuration={1500}
         />
-      </LineChart>
+      </AreaChart>
     </ResponsiveContainer>
   );
 };

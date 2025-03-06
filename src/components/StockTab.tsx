@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { StockChart } from './StockChart';
 import { fetchStockData, fetchPopularStocks } from '../utils/stockService';
@@ -110,7 +111,7 @@ export const StockTab = () => {
 
   return (
     <div className="animate-fade-in">
-      <div className="glass-panel p-4 mb-6 rounded-lg">
+      <div className="glass-panel p-6 mb-8 rounded-lg shadow-lg border-t border-white/20">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 flex gap-2">
             <div className="relative flex-1">
@@ -120,11 +121,14 @@ export const StockTab = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="w-full pr-8"
+                className="w-full pr-8 focus:ring-primary/50 bg-background/80 border-white/10"
               />
-              <Search className="absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Search className="absolute right-2.5 top-2.5 h-4 w-4 text-primary pointer-events-none" />
             </div>
-            <Button onClick={handleSearch}>Search</Button>
+            <Button onClick={handleSearch} className="gap-2">
+              <Search className="h-4 w-4" />
+              <span>Search</span>
+            </Button>
           </div>
           <div className="flex flex-wrap gap-2">
             {popularStocks.map((symbol) => (
@@ -133,7 +137,11 @@ export const StockTab = () => {
                 variant={selectedStock === symbol ? "default" : "outline"}
                 size="sm"
                 onClick={() => setSelectedStock(symbol)}
-                className="rounded-full"
+                className={`rounded-full font-medium ${
+                  selectedStock === symbol 
+                    ? "shadow-md" 
+                    : "hover:bg-primary/10 hover:text-primary"
+                }`}
               >
                 {symbol}
               </Button>
@@ -143,13 +151,13 @@ export const StockTab = () => {
       </div>
 
       {error && (
-        <div className="text-center p-8 rounded-lg glass-panel">
+        <div className="text-center p-8 rounded-lg glass-panel border border-destructive/20">
           <p className="text-destructive">{error}</p>
         </div>
       )}
 
       {isLoading ? (
-        <Card className="glass-panel animate-pulse">
+        <Card className="glass-panel animate-pulse shadow-xl border border-white/10">
           <CardContent className="p-6">
             <div className="loading-skeleton h-8 w-1/3 mb-4 rounded"></div>
             <div className="loading-skeleton h-6 w-1/4 mb-8 rounded"></div>
@@ -158,41 +166,53 @@ export const StockTab = () => {
         </Card>
       ) : stockData ? (
         <>
-          <Card className="glass-panel overflow-hidden transition-all duration-300 hover:shadow-md animate-slide-up mb-6">
+          <Card className="glass-panel overflow-hidden transition-all duration-300 hover:shadow-lg shadow-md animate-slide-up mb-8 border border-white/10">
             <CardContent className="p-6">
               <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-2">
                 <div>
-                  <h2 className="text-2xl font-bold">{stockData.companyName} ({stockData.symbol})</h2>
+                  <h2 className="text-2xl font-bold flex items-center gap-2">
+                    {stockData.companyName} 
+                    <Badge variant="outline" className="ml-2 font-mono tracking-wider">
+                      {stockData.symbol}
+                    </Badge>
+                  </h2>
                   <div className="flex items-center gap-3 mt-1">
                     <span className="text-xl font-medium">${stockData.price.toFixed(2)}</span>
-                    <span className={`text-sm font-medium ${stockData.change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                    <span className={`text-sm font-medium flex items-center gap-1 ${
+                      stockData.change >= 0 
+                        ? 'text-green-500 bg-green-500/10 px-2 py-0.5 rounded-md' 
+                        : 'text-red-500 bg-red-500/10 px-2 py-0.5 rounded-md'
+                    }`}>
+                      {stockData.change >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                       {stockData.change >= 0 ? '+' : ''}{stockData.change.toFixed(2)} ({stockData.changePercent.toFixed(2)}%)
                     </span>
                   </div>
                 </div>
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
                   onClick={() => loadStockData(stockData.symbol)}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 hover:bg-primary/10 hover:text-primary"
                 >
                   <RefreshCw className="w-4 h-4" />
                   <span>Refresh</span>
                 </Button>
               </div>
               
-              <div className="h-[350px] w-full">
+              <div className="h-[350px] w-full mt-6 bg-background/30 rounded-lg p-4 border border-white/5">
                 <StockChart data={stockData.historicalData} />
               </div>
             </CardContent>
           </Card>
 
           {/* AI Recommendation Card */}
-          <Card className="glass-panel overflow-hidden transition-all duration-300 hover:shadow-md animate-slide-up">
+          <Card className="glass-panel overflow-hidden transition-all duration-300 hover:shadow-lg shadow-md animate-slide-up border border-white/10">
             <CardContent className="p-6">
               <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                <Brain className="w-5 h-5" />
-                AI Market Recommendation
+                <Brain className="w-5 h-5 text-primary" />
+                <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                  AI Market Recommendation
+                </span>
               </h3>
               
               {isLoadingRecommendation ? (
@@ -205,7 +225,7 @@ export const StockTab = () => {
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
                     <Badge 
-                      className={`text-sm py-1 px-3 capitalize ${getRecommendationColor(recommendation.recommendation)}`}
+                      className={`text-sm py-1.5 px-4 capitalize ${getRecommendationColor(recommendation.recommendation)}`}
                     >
                       <span className="flex items-center gap-1.5">
                         {getRecommendationIcon(recommendation.recommendation)}
@@ -217,10 +237,13 @@ export const StockTab = () => {
                     </span>
                   </div>
                   
-                  <p className="text-sm md:text-base">{recommendation.reasoning}</p>
+                  <p className="text-sm md:text-base bg-background/30 p-4 rounded-lg border border-white/5">
+                    {recommendation.reasoning}
+                  </p>
                   
-                  <div className="text-xs text-muted-foreground mt-4 pt-2 border-t">
-                    Note: This is an AI-generated recommendation for educational purposes only. 
+                  <div className="text-xs text-muted-foreground mt-4 pt-2 border-t border-white/10">
+                    <p className="font-medium text-primary/80 mb-1">Disclaimer:</p>
+                    This is an AI-generated recommendation for educational purposes only. 
                     Always conduct your own research before making investment decisions.
                   </div>
                 </div>
@@ -233,7 +256,7 @@ export const StockTab = () => {
           </Card>
         </>
       ) : (
-        <div className="text-center p-8 rounded-lg glass-panel">
+        <div className="text-center p-8 rounded-lg glass-panel border border-white/10 shadow-md">
           <p className="text-muted-foreground">Select a stock to view its chart.</p>
         </div>
       )}
